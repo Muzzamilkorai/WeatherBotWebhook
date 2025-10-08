@@ -119,32 +119,7 @@ namespace WeatherBotWebhook.Services
             }
         }
 
-        private static (double a, double b) FitLine(double[] x, double[] y)
-        {
-            int n = Math.Min(x.Length, y.Length);
-            if (n == 0) return (0, 0);
-            if (n == 1) return (0, y[0]);
-            double sx = x.Sum(), sy = y.Sum();
-            double sxx = x.Select(v => v * v).Sum();
-            double sxy = x.Zip(y, (xi, yi) => xi * yi).Sum();
-            double denom = n * sxx - sx * sx;
-            if (Math.Abs(denom) < 1e-9) return (0, sy / n);
-            double a = (n * sxy - sx * sy) / denom;
-            double b = (sy - a * sx) / n;
-            return (a, b);
-        }
-
-        private static double Clamp(double v, double lo, double hi) => Math.Max(lo, Math.Min(hi, v));
-
-        private static double DiurnalTemp(double tMin, double tMax, double phase)
-        {
-            double shift = 0.6; // set daily max ~ 0.6 of the day
-            double x = phase - shift;
-            x -= Math.Floor(x);           // wrap 0..1
-            double cos = Math.Cos(2 * Math.PI * x);
-            return tMin + (tMax - tMin) * (1 - cos) / 2.0; // map cos [-1..1] -> [min..max]
-        }
-
+        
         public async Task<CurrentWeatherByCity?> GetCurrentWeatherByCityAsync(string city, string units = "metric")
         {
             var url = $"https://api.openweathermap.org/data/2.5/weather?q={Uri.EscapeDataString(city)}&appid={_apiKey}&units={units}";
@@ -160,6 +135,14 @@ namespace WeatherBotWebhook.Services
     public class Intent { [JsonPropertyName("displayName")] public string? DisplayName { get; set; } }
     public class DialogflowWebhookResponse { [JsonPropertyName("fulfillmentText")] public string? FulfillmentText { get; set; } }
 
+    public class QueryResult
+    {
+        [JsonPropertyName("queryText")] public string? QueryText { get; set; }
+        [JsonPropertyName("parameters")] public Dictionary<string, JsonElement>? Parameters { get; set; } // Use JsonElement to handle various types
+        [JsonPropertyName("intent")] public Intent? Intent { get; set; } // Your existing Intent class
+        [JsonPropertyName("languageCode")] public string? LanguageCode { get; set; }
+        // ... other fields
+    }
 
 
 }
